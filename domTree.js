@@ -53,7 +53,7 @@ const OUTPUT_PATH = './src/sample';
 
   fs.writeFileSync(filepath, JSON.stringify(tree, null, 2))
 
-  // await browser.close()
+  await browser.close()
 })()
 
 function delay(time) {

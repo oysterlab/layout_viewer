@@ -2,11 +2,14 @@ import './index.css'
 
 import ReactDOM from 'react-dom'
 import { useRef, useState } from 'react'
-import { Canvas, extend, MeshProps, ReactThreeFiber, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, extend, ReactThreeFiber, RectAreaLightProps, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Mesh, Vector3 } from 'three'
+import { Mesh } from 'three'
 
 import SAMPLE from './sample/https___www_netflix_com_kr_en__1024_1366.json'
+
+const PALETTE = ["#b30000", "#7c1158", "#4421af", "#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
+const palette = require('color-interpolate')(PALETTE)
 
 const flatten = (root:any) => {
   const rects:any[] = []
@@ -25,8 +28,8 @@ const normalize = (rect:any, {width:rootWidth, height:rootHeight}:any) => {
   return {
     ...rect,
     norm: {
-      x: rect.x / rootWidth,
-      y: rect.y / rootWidth,
+      x: rect.x / rootWidth + rect.width / rootWidth * 0.5,
+      y: - (rect.y / rootWidth + rect.height / rootWidth * 0.5),
       width: rect.width / rootWidth,
       height: rect.height / rootWidth
     }
@@ -34,10 +37,25 @@ const normalize = (rect:any, {width:rootWidth, height:rootHeight}:any) => {
 }
 
 const rects = flatten(SAMPLE).map((rect:any, _:number, rects:any[]) => normalize(rect, rects[0]))
+const maxDepth = rects.reduce((max:number, rect:any) => max < rect.depth ? rect.depth : max, 0)
 
-console.log(rects)
+rects.forEach((rect:any) => rect.color = palette(rect.depth/maxDepth))
 
 extend({ OrbitControls })
+
+
+function Light({ intensity, color }:RectAreaLightProps) {
+  return (
+    <rectAreaLight
+      width={3}
+      height={3}
+      color={color}
+      intensity={intensity}
+      position={[-2, 0, 5]}
+      castShadow
+    />
+  );
+}
 
 declare global {
   namespace JSX {
@@ -47,7 +65,7 @@ declare global {
   }
 }
 
-function Box(props:MeshProps) {
+function Box(props:any) {
   const ref = useRef<Mesh>()
 
   const [hovered, hover] = useState(false)
@@ -57,15 +75,15 @@ function Box(props:MeshProps) {
     <mesh
       {...props}
       ref={ref}
-      // scale={clicked ? 1.5 : 1}
       onClick={(event) => click(!clicked)}
       onPointerOver={(event) => {
         console.log(props.name)
         hover(true)
+        event.stopPropagation()
       }}
       onPointerOut={(event) => hover(false)}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
+      <meshStandardMaterial color={props.color} metalness={hovered ? 0.4 : 0.0} roughness={0.8} />
     </mesh>
   )
 }
@@ -82,14 +100,15 @@ const CameraControls = () => {
 };
 
 ReactDOM.render(
-  <Canvas camera={{ position: [0, 0, 10], fov: 70 }}>
+  <Canvas camera={{ position: [0, 0, 5], fov: 70 }}>
     <CameraControls />
     <ambientLight />
+  
     <pointLight position={[1, 10, 10]} />
     {
-      rects.map(({id, name, norm:{x, y, width, height}, depth}:any) => {
+      rects.map(({id, name, color, norm:{x, y, width, height}, depth}:any) => {
         // if (y > 1) console.log(y)
-        return <Box key={id} name={name} position={[x, y, depth * 0.1]} scale={[width, height, 0.01]}></Box>
+        return <Box key={id} name={name} color={color} position={[x, y, depth * 0.1]} scale={[width, height, 0.03]}></Box>
       })
     }
   </Canvas>,
