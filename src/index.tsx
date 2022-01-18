@@ -2,7 +2,7 @@ import './index.css'
 
 import ReactDOM from 'react-dom'
 import { useRef, useState } from 'react'
-import { Canvas, extend, ReactThreeFiber, RectAreaLightProps, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, extend, ReactThreeFiber, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Mesh } from 'three'
 
@@ -43,20 +43,6 @@ rects.forEach((rect:any) => rect.color = palette(rect.depth/maxDepth))
 
 extend({ OrbitControls })
 
-
-function Light({ intensity, color }:RectAreaLightProps) {
-  return (
-    <rectAreaLight
-      width={3}
-      height={3}
-      color={color}
-      intensity={intensity}
-      position={[-2, 0, 5]}
-      castShadow
-    />
-  );
-}
-
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -75,15 +61,15 @@ function Box(props:any) {
     <mesh
       {...props}
       ref={ref}
-      onClick={(event) => click(!clicked)}
+      onClick={(_) => click(!clicked)}
       onPointerOver={(event) => {
         console.log(props.name)
         hover(true)
         event.stopPropagation()
       }}
-      onPointerOut={(event) => hover(false)}>
+      onPointerOut={(_) => hover(false)}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={props.color} metalness={hovered ? 0.4 : 0.0} roughness={0.8} />
+      <meshStandardMaterial color={props.color} metalness={hovered ? 0.4 : 0.0} roughness={hovered ? 0.0 : 0.8} />
     </mesh>
   )
 }
@@ -100,15 +86,13 @@ const CameraControls = () => {
 };
 
 ReactDOM.render(
-  <Canvas camera={{ position: [0, 0, 5], fov: 70 }}>
+  <Canvas camera={{ position: [0, -10, 10], fov: 30 }}>
     <CameraControls />
     <ambientLight />
-  
     <pointLight position={[1, 10, 10]} />
     {
       rects.map(({id, name, color, norm:{x, y, width, height}, depth}:any) => {
-        // if (y > 1) console.log(y)
-        return <Box key={id} name={name} color={color} position={[x, y, depth * 0.1]} scale={[width, height, 0.03]}></Box>
+        return <Box key={id} name={name} color={color} position={[x, y, depth * 0.15]} scale={[width, height, 0.03]}></Box>
       })
     }
   </Canvas>,

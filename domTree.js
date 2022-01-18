@@ -23,7 +23,7 @@ const OUTPUT_PATH = './src/sample';
   });
 
 
-  await delay(4000)
+  await delay(10000)
 
   const tree = await page.evaluate(() => {
     const uuidv4 = () => {
